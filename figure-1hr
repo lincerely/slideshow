@@ -1,0 +1,10 @@
+#!/bin/bash
+# figure drawing 1hr session
+
+slideshow "30 30 30 30 30 30 30 30 30 30" "$@"
+slideshow "60 60 60 60 60" "$@"
+slideshow "300 300 300 300 300" "$@"
+slideshow "600" "$@"
+sleep 300
+slideshow "1500" "$@"
+

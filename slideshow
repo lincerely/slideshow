@@ -1,0 +1,65 @@
+#!/bin/bash
+# figure drawing helper 
+
+function print_help() {
+	local prog
+	prog=$(basename $0)
+	echo "Usage: $prog \"INTERVAL1 INTERVAL2...\" IMG_FOLDER..."
+	exit 1
+}
+
+# parse args
+if [[ $# -lt "2" ]]; then
+	print_help
+fi
+
+# global var
+declare pid current_img
+
+function get_random_img() {
+	local idx
+	idx=$(( RANDOM % ${#img_paths[*]} ))
+	echo "${img_paths[$idx]}"
+}
+
+function open_img() {
+	local pids_before pids_after
+	pids_before=$(pgrep -f 'Preview')
+	open -nF "$1"
+	pids_after=$(pgrep -f 'Preview')
+	pid=$(echo "$pids_before" "$pids_after" | tr ' ' '\n' | sort | uniq -u)
+	if [ "$pid" == "" ]; then
+		echo 'Preview.app closed'
+		exit 1
+	fi
+	trap '"kill -2 $(pid)"' SIGINT
+}
+
+function count_down() {
+	local time_left prev now
+	time_left=$1
+	prev=$(date +%s)
+	while [ "$time_left" -gt  0 ]; do
+		now=$(date +%s)
+		time_left=$(( time_left - (now-prev) ))
+		printf "\rTime left: %02d:%02d" $((time_left/60000)) $((time_left%60000/1000))
+	done
+	echo -en "\r                                             \r\a"
+}
+
+# main
+
+img_paths=()
+while IFS='' read -r line; do 
+	img_paths+=("$line");
+done < <(find "$2" -type 'f' -name '*' -exec file "{}" --mime-type \; | grep 'image/' | sed 's/^\(.*\): .*image\/.*$/\1/g') 
+
+IFS=' '
+for interval in $1; do
+	current_img=$(get_random_img)
+	echo "$current_img"
+	open_img "$current_img"
+	count_down $(( interval * 1000 ))
+	#sleep 10
+	kill "$pid"
+done
