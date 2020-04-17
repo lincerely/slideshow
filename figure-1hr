@@ -1,7 +1,7 @@
 #!/bin/bash
 # figure drawing 1hr session
 
-IMGS="/Users/lincoln/Pictures/art_reference/line-of-action/"
+IMGS="$HOME/Pictures/art_reference/line-of-action/" # change this
 
 slideshow "30 30 30 30 30 30 30 30 30 30" "$IMGS" && \
 slideshow "60 60 60 60 60" "$IMGS" && \
@@ -9,4 +9,3 @@ slideshow "300 300 300 300 300" "$IMGS" && \
 slideshow "600" "$IMGS" && \
 sleep 300 && \
 slideshow "1500" "$IMGS"
-

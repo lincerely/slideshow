@@ -8,13 +8,6 @@ function print_help() {
 	exit 1
 }
 
-# parse args
-if [[ $# -lt "2" ]]; then
-	print_help
-fi
-
-# global var
-declare pid current_img
 
 function get_random_img() {
 	local idx
@@ -40,7 +33,7 @@ function count_down() {
 	time_now=$(date +%s)
 	time_left=$1
 	time_end=$(( time_now + time_left ))
-	while [ "$time_left" -gt  0 ]; do
+	while [ "$time_left" -gt 0 ]; do
 		time_now=$(date +%s)
 		time_left=$(( time_end - time_now ))
 		printf "\rTime left: %02d:%02d" $((time_left/60)) $((time_left%60))
@@ -54,18 +47,30 @@ function cleanup() {
 	exit 1
 }
 
-# main
+# MAIN
+
+# global var
+declare pid current_img
+
+# parse args
+if [[ $# -lt "2" ]]; then
+	print_help
+fi
+
 img_paths=()
 while IFS='' read -r line; do 
 	img_paths+=("$line");
-done < <(find "$2" -type 'f' -name '*' -exec file "{}" --mime-type \; | grep 'image/' | sed 's/^\(.*\): .*image\/.*$/\1/g') 
+done < <(\
+	find "$2" -type 'f' -name '*' -exec file "{}" --mime-type \; |\
+	grep 'image/' |\
+	sed 's/^\(.*\): .*image\/.*$/\1/g'\
+	) 
 
 if [ "${#img_paths[@]}" -eq "0" ]; then
 	echo "No image found" >&2
 	exit 1
 fi
 
-trap cleanup SIGINT SIGTERM
 defaults write -app Preview NSAutomaticWindowAnimationsEnabled -bool false
 
 IFS=' '
@@ -73,8 +78,9 @@ for interval in $1; do
 	current_img=$(get_random_img)
 	echo "$current_img"
 	open_img "$current_img"
+	trap cleanup 2 15
 	count_down $interval 
-	kill $pid || break
+	kill $pid 2> /dev/null || break
 done
 
 defaults delete -app Preview NSAutomaticWindowAnimationsEnabled
